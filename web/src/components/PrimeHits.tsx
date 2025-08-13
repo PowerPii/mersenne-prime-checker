@@ -11,18 +11,24 @@ export default function PrimeHits() {
   const [sortAsc, setSortAsc] = useState<boolean>(true);
 
   useEffect(() => {
-    let alive = true, inflight = false;
+    let alive = true,
+      inflight = false;
     const load = async () => {
       if (inflight) return;
       inflight = true;
       try {
         const data = await apiFetch<PrimeRow[]>("/primes?limit=20");
         if (alive) setRows(data);
-      } finally { inflight = false; }
+      } finally {
+        inflight = false;
+      }
     };
     load();
     const t = setInterval(load, 2000);
-    return () => { alive = false; clearInterval(t); };
+    return () => {
+      alive = false;
+      clearInterval(t);
+    };
   }, []);
 
   const sorted = useMemo(() => {
@@ -56,7 +62,9 @@ export default function PrimeHits() {
   return (
     <div className="mt-10 max-w-5xl">
       <div className="flex items-center justify-between mb-3">
-        <h2 className="text-2xl font-semibold text-black">Found Mersenne Primes</h2>
+        <h2 className="text-2xl font-semibold text-black">
+          Found Mersenne Primes
+        </h2>
         <button
           onClick={() => setSortAsc((s) => !s)}
           className="text-sm px-3 py-1.5 rounded border border-slate-300 hover:bg-slate-50"
@@ -82,7 +90,9 @@ export default function PrimeHits() {
                 {/* Left: details */}
                 <div className="min-w-0">
                   <div className="flex items-center gap-3">
-                    <div className="text-lg text-black font-bold truncate">M{r.p}</div>
+                    <div className="text-lg text-black font-bold truncate">
+                      M{r.p}
+                    </div>
                     <div className="text-xs text-slate-500">
                       block {r.block_id}–{r.block_id + 1}M
                     </div>

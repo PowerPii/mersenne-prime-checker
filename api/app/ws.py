@@ -9,6 +9,7 @@ router = APIRouter()
 
 # --- helpers ---------------------------------------------------------------
 
+
 def _get_job_queue(app, job_id: str) -> asyncio.Queue:
     """
     Per-job single queue (legacy). Producers should push dicts and end with None.
@@ -16,6 +17,7 @@ def _get_job_queue(app, job_id: str) -> asyncio.Queue:
     if not hasattr(app.state, "queues"):
         app.state.queues = {}
     return app.state.queues.setdefault(job_id, asyncio.Queue(maxsize=1024))
+
 
 def _subscribe_block(app, block_id: int) -> asyncio.Queue:
     """
@@ -30,11 +32,14 @@ def _subscribe_block(app, block_id: int) -> asyncio.Queue:
     subs.add(q)
     return q
 
+
 def _unsubscribe_block(app, block_id: int, q: asyncio.Queue) -> None:
     subs: Set[asyncio.Queue] = app.state.block_topics.get(block_id, set())  # type: ignore[attr-defined]
     subs.discard(q)
 
+
 # --- WebSocket endpoints ---------------------------------------------------
+
 
 @router.websocket("/jobs/{job_id}")
 async def ws_job(websocket: WebSocket, job_id: str):

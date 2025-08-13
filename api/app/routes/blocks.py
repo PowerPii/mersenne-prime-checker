@@ -1,24 +1,17 @@
 # api/app/routes/blocks.py
 from __future__ import annotations
 
-import asyncio, sys, pathlib
+import asyncio
 from typing import List
-
 from fastapi import APIRouter, Request
-
-# --- load the pybind11 extension (built by CMake) ---------------------------
-root = pathlib.Path(__file__).resolve().parents[3]
-ext  = root / "build" / "bindings" / "python"
-if ext.exists() and str(ext) not in sys.path:
-    sys.path.append(str(ext))
-import llcore  # type: ignore
-
+from .._llcore import llcore
 from .. import db as dao
 
 router = APIRouter()
 
 
 # ---- helpers ---------------------------------------------------------------
+
 
 def block_bounds(block_id: int) -> tuple[int, int]:
     """Return [start, end_excl) for a 1M-wide block."""
@@ -32,6 +25,7 @@ def primes_in_range(a: int, b: int) -> List[int]:
         return []
     a = max(a, 2)
     import math
+
     limit = int(math.isqrt(b)) + 1
 
     base = [True] * (limit + 1)
@@ -64,6 +58,7 @@ def _broadcast_sync(app, block_id: int, msg):
 
 # ---- REST endpoints --------------------------------------------------------
 
+
 @router.get("")
 def list_blocks(req: Request, limit: int = 6):
     """List the first N blocks, lazily seeding any missing ones."""
@@ -87,7 +82,7 @@ def list_blocks(req: Request, limit: int = 6):
             "id": r["id"],
             "start": r["start_p"],
             "end_excl": r["end_p_excl"],
-            "label": f"{r['id']}–{r['id']+1}M",
+            "label": f"{r['id']}–{r['id'] + 1}M",
             "candidate_count": r["candidate_count"],
             "tested_count": r["tested_count"],
             "verified_count": r["verified_count"],
@@ -161,16 +156,22 @@ async def start_block(req: Request, block_id: int, concurrency: int = 1):
 
     if not todo:
         # let subscribers know it’s already complete
-        _broadcast_sync(app, block_id, {
-            "block_id": block_id,
-            "tested": b["tested_count"],
-            "total":  b["candidate_count"],
-            "done":   True
-        })
+        _broadcast_sync(
+            app,
+            block_id,
+            {
+                "block_id": block_id,
+                "tested": b["tested_count"],
+                "total": b["candidate_count"],
+                "done": True,
+            },
+        )
         # close all subscribers
         for q in list(app.state.block_topics.get(block_id, set())):
-            try: q.put_nowait(None)
-            except asyncio.QueueFull: pass
+            try:
+                q.put_nowait(None)
+            except asyncio.QueueFull:
+                pass
         return {"scheduled": 0, "message": "already complete"}
 
     workq: asyncio.Queue[int] = asyncio.Queue()
@@ -205,18 +206,25 @@ async def start_block(req: Request, block_id: int, concurrency: int = 1):
                         total = max(0, p - 2)
 
                         def cb(iter_idx: int, _digest: bytes):
-                            pct = 100 if total == 0 else int(((iter_idx + 1) * 100) / total)
+                            pct = (
+                                100
+                                if total == 0
+                                else int(((iter_idx + 1) * 100) / total)
+                            )
                             loop.call_soon_threadsafe(
-                                _broadcast_sync, app, block_id,
-                                {"block_id": block_id, "p": int(p), "pct": pct}
+                                _broadcast_sync,
+                                app,
+                                block_id,
+                                {"block_id": block_id, "p": int(p), "pct": pct},
                             )
 
                         res = llcore.ll_test(int(p), progress_stride=0, callback=cb)
                         dao.exponent_finish_ok(
-                            conn, p,
+                            conn,
+                            p,
                             int(res["is_prime"]),
                             int(res["ns_elapsed"]),
-                            res["engine_info"]
+                            res["engine_info"],
                         )
                     except Exception as e:
                         dao.exponent_fail(conn, p, str(e))
@@ -229,9 +237,15 @@ async def start_block(req: Request, block_id: int, concurrency: int = 1):
                 dao.block_counts_bump(conn, block_id, 1)
                 b2 = dao.block_get(conn, block_id)
                 loop.call_soon_threadsafe(
-                    _broadcast_sync, app, block_id,
-                    {"block_id": block_id, "last_p": p,
-                     "tested": b2["tested_count"], "total": b2["candidate_count"]}
+                    _broadcast_sync,
+                    app,
+                    block_id,
+                    {
+                        "block_id": block_id,
+                        "last_p": p,
+                        "tested": b2["tested_count"],
+                        "total": b2["candidate_count"],
+                    },
                 )
 
             finally:
@@ -246,16 +260,22 @@ async def start_block(req: Request, block_id: int, concurrency: int = 1):
             app.state.block_cancel.discard(block_id)
 
         b3 = dao.block_get(conn, block_id)
-        _broadcast_sync(app, block_id, {
-            "block_id": block_id,
-            "tested": b3["tested_count"],
-            "total":  b3["candidate_count"],
-            "done":   True
-        })
+        _broadcast_sync(
+            app,
+            block_id,
+            {
+                "block_id": block_id,
+                "tested": b3["tested_count"],
+                "total": b3["candidate_count"],
+                "done": True,
+            },
+        )
         # send sentinel to all subscribers so sockets close cleanly
         for q in list(app.state.block_topics.get(block_id, set())):
-            try: q.put_nowait(None)
-            except asyncio.QueueFull: pass
+            try:
+                q.put_nowait(None)
+            except asyncio.QueueFull:
+                pass
 
         for w in workers:
             w.cancel()

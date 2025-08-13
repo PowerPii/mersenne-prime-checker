@@ -5,6 +5,7 @@ from ..services.ll_runner import submit_ll
 
 router = APIRouter()
 
+
 @router.post("")
 async def create_job(req: Request, body: CreateJob):
     p = int(body.p)
@@ -13,6 +14,7 @@ async def create_job(req: Request, body: CreateJob):
     job_id = uuid4().hex
     await submit_ll(req.app, job_id, p, body.progress_stride)
     return {"id": job_id}
+
 
 @router.get("/{job_id}")
 async def get_job(req: Request, job_id: str):

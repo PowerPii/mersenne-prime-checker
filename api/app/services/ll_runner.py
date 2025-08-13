@@ -1,17 +1,18 @@
-import asyncio, pathlib, sys
-root = pathlib.Path(__file__).resolve().parents[3]  # repo root
-p = root / "build" / "bindings" / "python"
-if p.exists() and str(p) not in sys.path:
-    sys.path.append(str(p))
-import llcore # type: ignore
+import asyncio
+from .._llcore import llcore
 
-from typing import Optional
 
 async def submit_ll(app, job_id: str, p: int, progress_stride):
     loop = asyncio.get_running_loop()
     q: asyncio.Queue = asyncio.Queue(maxsize=1024)
     app.state.queues[job_id] = q
-    app.state.jobs[job_id] = {"id": job_id, "p": p, "status": "queued", "result": None, "error": None}
+    app.state.jobs[job_id] = {
+        "id": job_id,
+        "p": p,
+        "status": "queued",
+        "result": None,
+        "error": None,
+    }
 
     stride = 0 if (progress_stride is None) else int(progress_stride)
 

@@ -4,8 +4,8 @@
 #include <pybind11/stl.h>
 #include <cstdint>
 #include <optional>
-#include <string>       
-#include <stdexcept>    
+#include <string>
+#include <stdexcept>
 #include <gmp.h>
 #include <cstdio>
 

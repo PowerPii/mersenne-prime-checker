@@ -1,28 +1,48 @@
 export type JobProgress = { iteration: number; pct: number; digest: string };
 
 export type LLJobResult = {
-  p: number; is_prime: boolean; iterations: number; ns_elapsed: number;
-  final_residue_is_zero: boolean; engine_info: string;
+  p: number;
+  is_prime: boolean;
+  iterations: number;
+  ns_elapsed: number;
+  final_residue_is_zero: boolean;
+  engine_info: string;
 };
 
 export type JobStatus = {
-  id: string; p: number; status: "queued" | "running" | "done" | "error";
-  result?: LLJobResult | null; error?: string | null;
+  id: string;
+  p: number;
+  status: "queued" | "running" | "done" | "error";
+  result?: LLJobResult | null;
+  error?: string | null;
 };
 
-export type DigitsCreateResp = { id: string; p: number; estimated_digits: number };
+export type DigitsCreateResp = {
+  id: string;
+  p: number;
+  estimated_digits: number;
+};
 
 export type DigitsArtifact = {
-  job_id: string; filename: string; path: string;
-  digits: number; size_bytes: number; sha256: string;
+  job_id: string;
+  filename: string;
+  path: string;
+  digits: number;
+  size_bytes: number;
+  sha256: string;
 };
 
 export type DigitsJob = {
-  id: string; kind: "digits"; p: number;
+  id: string;
+  kind: "digits";
+  p: number;
   status: "queued" | "running" | "done" | "error";
-  created_at: number; started_at?: number | null;
-  finished_at?: number | null; error?: string | null;
-  engine_info?: string | null; artifact?: DigitsArtifact | null;
+  created_at: number;
+  started_at?: number | null;
+  finished_at?: number | null;
+  error?: string | null;
+  engine_info?: string | null;
+  artifact?: DigitsArtifact | null;
 };
 
 export type BlockSummary = {
@@ -61,11 +81,15 @@ export type BlockWsMsg = {
   tested: number;
   total: number;
   done?: boolean;
-  p?: number;          
-  pct?: number;        
+  p?: number;
+  pct?: number;
 };
 
 export type PrimeRow = {
-  p: number; block_id: number; digits: number;
-  finished_at: number | null; engine_info: string | null; ns_elapsed: number | null;
+  p: number;
+  block_id: number;
+  digits: number;
+  finished_at: number | null;
+  engine_info: string | null;
+  ns_elapsed: number | null;
 };

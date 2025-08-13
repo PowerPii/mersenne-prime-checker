@@ -7,25 +7,25 @@ exclude: |
     cpp/build/|
     api/.venv/|
     web/.next/|
-    web/node_modules/) 
+    web/node_modules/)
 
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.6.0
+    rev: v6.0.0
     hooks:
       - id: end-of-file-fixer
       - id: trailing-whitespace
 
   # Python formatting (api/, tests/)
   - repo: https://github.com/psf/black
-    rev: 24.8.0
+    rev: 25.1.0
     hooks:
       - id: black
         files: ^(api|tests)/
 
   # Python lint (fast, with autofix)
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.6.9
+    rev: v0.12.8
     hooks:
       - id: ruff
         args: [--fix]
@@ -35,7 +35,7 @@ repos:
 
   # C/C++ formatting (src + include)
   - repo: https://github.com/pre-commit/mirrors-clang-format
-    rev: v17.0.6
+    rev: v20.1.8
     hooks:
       - id: clang-format
         files: ^cpp/(src|include)/.*\.(c|cc|cpp|cxx|h|hpp|hh)$
@@ -43,7 +43,7 @@ repos:
 
   # Web formatting (Next.js sources)
   - repo: https://github.com/pre-commit/mirrors-prettier
-    rev: v3.3.3
+    rev: v4.0.0-alpha.8
     hooks:
       - id: prettier
         files: ^web/src/.*\.(ts|tsx|js|jsx|json|css|md)$

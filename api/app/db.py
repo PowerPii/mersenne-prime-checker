@@ -1,7 +1,10 @@
 # api/app/db.py
-import sqlite3, pathlib, time
+import sqlite3
+import pathlib
+import time
 
 DB_PATH = pathlib.Path(__file__).resolve().parents[1] / "data" / "app.db"
+
 
 # ---------- connect ----------
 def connect(db_path: pathlib.Path = DB_PATH) -> sqlite3.Connection:
@@ -16,10 +19,12 @@ def connect(db_path: pathlib.Path = DB_PATH) -> sqlite3.Connection:
     _ensure_blocks_schema(conn)
     return conn
 
+
 # ---------- core (jobs/artifacts) ----------
 def _ensure_core_schema(conn: sqlite3.Connection):
     with conn:
-        conn.executescript("""
+        conn.executescript(
+            """
         CREATE TABLE IF NOT EXISTS jobs(
           id TEXT PRIMARY KEY,
           kind TEXT NOT NULL,          -- 'll' | 'digits'
@@ -40,48 +45,63 @@ def _ensure_core_schema(conn: sqlite3.Connection):
           sha256 TEXT NOT NULL,
           FOREIGN KEY(job_id) REFERENCES jobs(id) ON DELETE CASCADE
         );
-        """)
+        """
+        )
+
 
 def job_insert(c, id, kind, p, status="queued"):
-    with c: c.execute(
-        "INSERT INTO jobs(id,kind,p,status,created_at) VALUES(?,?,?,?,?)",
-        (id, kind, p, status, int(time.time()))
-    )
+    with c:
+        c.execute(
+            "INSERT INTO jobs(id,kind,p,status,created_at) VALUES(?,?,?,?,?)",
+            (id, kind, p, status, int(time.time())),
+        )
+
 
 def job_start(c, id):
-    with c: c.execute(
-        "UPDATE jobs SET status='running', started_at=? WHERE id=?",
-        (int(time.time()), id)
-    )
+    with c:
+        c.execute(
+            "UPDATE jobs SET status='running', started_at=? WHERE id=?",
+            (int(time.time()), id),
+        )
+
 
 def job_finish_ok(c, id, engine=None):
-    with c: c.execute(
-        "UPDATE jobs SET status='done', finished_at=?, engine_info=? WHERE id=?",
-        (int(time.time()), engine, id)
-    )
+    with c:
+        c.execute(
+            "UPDATE jobs SET status='done', finished_at=?, engine_info=? WHERE id=?",
+            (int(time.time()), engine, id),
+        )
+
 
 def job_fail(c, id, err):
-    with c: c.execute(
-        "UPDATE jobs SET status='error', finished_at=?, error=? WHERE id=?",
-        (int(time.time()), err, id)
-    )
+    with c:
+        c.execute(
+            "UPDATE jobs SET status='error', finished_at=?, error=? WHERE id=?",
+            (int(time.time()), err, id),
+        )
+
 
 def job_get(c, id):
     return c.execute("SELECT * FROM jobs WHERE id=?", (id,)).fetchone()
 
+
 def artifact_insert(c, job_id, filename, path, digits, size_bytes, sha256):
-    with c: c.execute(
-        "INSERT INTO artifacts(job_id,filename,path,digits,size_bytes,sha256) VALUES(?,?,?,?,?,?)",
-        (job_id, filename, path, digits, size_bytes, sha256)
-    )
+    with c:
+        c.execute(
+            "INSERT INTO artifacts(job_id,filename,path,digits,size_bytes,sha256) VALUES(?,?,?,?,?,?)",
+            (job_id, filename, path, digits, size_bytes, sha256),
+        )
+
 
 def artifact_get_by_job(c, job_id):
     return c.execute("SELECT * FROM artifacts WHERE job_id=?", (job_id,)).fetchone()
 
+
 # ---------- blocks/exponents ----------
 def _ensure_blocks_schema(conn):
     with conn:
-        conn.executescript("""
+        conn.executescript(
+            """
         PRAGMA journal_mode=WAL;
         PRAGMA foreign_keys=ON;
 
@@ -132,85 +152,125 @@ def _ensure_blocks_schema(conn):
         CREATE INDEX IF NOT EXISTS idx_exponents_block    ON exponents(block_id);
         CREATE INDEX IF NOT EXISTS idx_exponents_status   ON exponents(status);
         CREATE INDEX IF NOT EXISTS idx_exponents_prime_ok ON exponents(is_prime, status);
-        """)
+        """
+        )
 
-def block_upsert(conn, block_id:int, start:int, end_excl:int, candidate_count:int):
+
+def block_upsert(conn, block_id: int, start: int, end_excl: int, candidate_count: int):
     with conn:
-        conn.execute("""
+        conn.execute(
+            """
         INSERT INTO blocks(id,start_p,end_p_excl,candidate_count,created_at)
         VALUES(?,?,?,?,?)
         ON CONFLICT(id) DO UPDATE SET
           start_p=excluded.start_p,
           end_p_excl=excluded.end_p_excl,
           candidate_count=excluded.candidate_count
-        """, (int(block_id), int(start), int(end_excl), int(candidate_count), int(time.time())))
+        """,
+            (
+                int(block_id),
+                int(start),
+                int(end_excl),
+                int(candidate_count),
+                int(time.time()),
+            ),
+        )
 
-def block_get(conn, block_id:int):
+
+def block_get(conn, block_id: int):
     return conn.execute("SELECT * FROM blocks WHERE id=?", (int(block_id),)).fetchone()
 
-def block_list(conn, limit:int=12):
-    return conn.execute("SELECT * FROM blocks ORDER BY id LIMIT ?", (int(limit),)).fetchall()
 
-def block_counts_bump(conn, block_id:int, tested_inc:int):
+def block_list(conn, limit: int = 12):
+    return conn.execute(
+        "SELECT * FROM blocks ORDER BY id LIMIT ?", (int(limit),)
+    ).fetchall()
+
+
+def block_counts_bump(conn, block_id: int, tested_inc: int):
     with conn:
-        conn.execute("UPDATE blocks SET tested_count=tested_count+? WHERE id=?", (int(tested_inc), int(block_id)))
+        conn.execute(
+            "UPDATE blocks SET tested_count=tested_count+? WHERE id=?",
+            (int(tested_inc), int(block_id)),
+        )
 
-def block_verified_bump(conn, block_id:int, inc:int=1):
+
+def block_verified_bump(conn, block_id: int, inc: int = 1):
     with conn:
-        conn.execute("UPDATE blocks SET verified_count=verified_count+? WHERE id=?", (int(inc), int(block_id)))
+        conn.execute(
+            "UPDATE blocks SET verified_count=verified_count+? WHERE id=?",
+            (int(inc), int(block_id)),
+        )
 
-def exponent_seed(conn, block_id:int, primes:list[int]):
+
+def exponent_seed(conn, block_id: int, primes: list[int]):
     with conn:
         conn.executemany(
             "INSERT OR IGNORE INTO exponents(p,block_id) VALUES(?,?)",
-            [(int(p), int(block_id)) for p in primes]
+            [(int(p), int(block_id)) for p in primes],
         )
 
-def exponents_by_block(conn, block_id:int):
+
+def exponents_by_block(conn, block_id: int):
     return conn.execute(
-        "SELECT * FROM exponents WHERE block_id=? ORDER BY p",
-        (int(block_id),)
+        "SELECT * FROM exponents WHERE block_id=? ORDER BY p", (int(block_id),)
     ).fetchall()
 
-def exponents_unfinished(conn, block_id:int):
+
+def exponents_unfinished(conn, block_id: int):
     return conn.execute(
         "SELECT p FROM exponents WHERE block_id=? AND status!='done' AND status!='running' ORDER BY p",
-        (int(block_id),)
+        (int(block_id),),
     ).fetchall()
 
-def exponent_start(conn, p:int):
+
+def exponent_start(conn, p: int):
     with conn:
         conn.execute(
             "UPDATE exponents SET status='running', job_started_at=? WHERE p=?",
-            (int(time.time()), int(p))
+            (int(time.time()), int(p)),
         )
 
-def exponent_finish_ok(conn, p:int, is_prime:int, ns_elapsed:int, engine_info:str|None):
+
+def exponent_finish_ok(
+    conn, p: int, is_prime: int, ns_elapsed: int, engine_info: str | None
+):
     with conn:
-        conn.execute("""
+        conn.execute(
+            """
             UPDATE exponents
             SET status='done', is_prime=?, ns_elapsed=?, engine_info=?, job_finished_at=?
             WHERE p=?
-        """, (int(is_prime), int(ns_elapsed), engine_info, int(time.time()), int(p)))
+        """,
+            (int(is_prime), int(ns_elapsed), engine_info, int(time.time()), int(p)),
+        )
         if is_prime:
             # bump verified_count on the owning block
-            conn.execute("""
+            conn.execute(
+                """
                 UPDATE blocks SET verified_count = verified_count + 1
                 WHERE id = (SELECT block_id FROM exponents WHERE p=?)
-            """, (int(p),))
+            """,
+                (int(p),),
+            )
 
-def exponent_fail(conn, p:int, err:str):
+
+def exponent_fail(conn, p: int, err: str):
     with conn:
         conn.execute(
             "UPDATE exponents SET status='error', error=?, job_finished_at=? WHERE p=?",
-            (err, int(time.time()), int(p))
+            (err, int(time.time()), int(p)),
         )
 
+
 def primes_recent(conn, limit: int = 20):
-    return conn.execute("""
+    return conn.execute(
+        """
         SELECT p, block_id, job_finished_at AS finished_at, engine_info, ns_elapsed
         FROM exponents
         WHERE is_prime = 1 AND status = 'done'
         ORDER BY (finished_at IS NULL), finished_at DESC
         LIMIT ?
-    """, (int(limit),)).fetchall()
+    """,
+        (int(limit),),
+    ).fetchall()

@@ -1,9 +1,10 @@
 # api/app/routes/primes.py
-import math, pathlib, sys
+import math
 from fastapi import APIRouter, Request
 from .. import db as dao
 
 router = APIRouter()
+
 
 @router.get("")
 def recent_primes(req: Request, limit: int = 12):
@@ -17,15 +18,18 @@ def recent_primes(req: Request, limit: int = 12):
         block_id = int(bid) if bid is not None else (p // 1_000_000)
         # decimal digit count of M_p = 2^p - 1
         digits = int(math.floor(p * math.log10(2)) + 1)
-        out.append({
-            "p": p,
-            "block_id": block_id,
-            "digits": digits,
-            "finished_at": r["finished_at"],
-            "engine_info": r["engine_info"],
-            "ns_elapsed": r["ns_elapsed"],
-        })
+        out.append(
+            {
+                "p": p,
+                "block_id": block_id,
+                "digits": digits,
+                "finished_at": r["finished_at"],
+                "engine_info": r["engine_info"],
+                "ns_elapsed": r["ns_elapsed"],
+            }
+        )
     return out
+
 
 @router.get("/count")
 def primes_count(req: Request):
