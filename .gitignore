@@ -33,5 +33,13 @@ web/.vercel/
 # package-lock.json
 # yarn.lock
 
+# SQLite + WAL
+api/data/*.db
+api/data/*.db-*
+api/data/*.db-*
+api/data/*.db-shm
+api/data/*.db-wal
+api/data/artifacts/
+
 node_modules/
 **/.cache/
