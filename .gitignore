@@ -1,0 +1,27 @@
+# OS
+.DS_Store
+
+# C++ build
+build/
+cpp/build/
+CMakeCache.txt
+CMakeFiles/
+*.o
+*.a
+*.la
+*.lo
+
+# Python
+api/.venv/
+__pycache__/
+*.pyc
+
+# Node / Next.js
+web/node_modules/
+web/.next/
+web/.turbo/
+web/.vercel/
+# lockfiles are fine to commit; ignore if you prefer a single manager
+# pnpm-lock.yaml
+# package-lock.json
+# yarn.lock

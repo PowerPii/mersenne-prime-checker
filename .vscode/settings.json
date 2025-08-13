@@ -1,0 +1,9 @@
+{
+    "cmake.sourceDirectory": "/Users/powerpii/Desktop/Mersenne/cpp",
+    "files.associations": {
+        "*.dbclient-js": "javascript",
+        "*.embeddedhtml": "html",
+        "*.css": "tailwindcss",
+        "optional": "cpp"
+    }
+}
