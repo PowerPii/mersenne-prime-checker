@@ -22,13 +22,13 @@ export default async function Home() {
     <div>
       {/* Hero */}
       <section className="relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-b from-slate-50 to-white" />
+        <div className="absolute inset-0" />
         <div className="relative mx-auto max-w-6xl px-4 py-14">
           <h1 className="text-3xl md:text-4xl font-semibold tracking-tight">
             Local Mersenne search, verified.
           </h1>
-          <p className="mt-2 text-slate-600">
-            We’ve found{" "}
+          <p className="mt-2 text-slate-500">
+            We&apos;ve found{" "}
             <span className="font-bold">{count.toLocaleString()}</span> Mersenne
             primes so far. Launch new runs, watch live progress, and export full
             digits.
@@ -36,19 +36,21 @@ export default async function Home() {
           <div className="mt-6 flex gap-3">
             <Link
               href="/run"
-              className="px-4 py-2 rounded-md bg-slate-900 text-white hover:bg-slate-800 text-sm"
+              className="px-4 py-2 rounded-md bg-slate-900 dark:bg-slate-100 text-white dark:text-black hover:bg-slate-800 dark:hover:bg-slate-200 text-sm"
             >
               Start a run
             </Link>
             <Link
               href="/lists"
-              className="px-4 py-2 rounded-md border border-slate-200 hover:bg-slate-50 text-sm"
+              className="px-4 py-2 rounded-md border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-950 text-sm"
             >
               View all primes
             </Link>
           </div>
         </div>
       </section>
+
+      <hr />
 
       {/* Biggest primes */}
       <section className="mx-auto max-w-6xl p-12">
@@ -62,7 +64,7 @@ export default async function Home() {
             {recent.map((r) => (
               <div
                 key={r.p}
-                className="rounded-xl border border-slate-200 bg-white p-4"
+                className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-black p-4"
               >
                 <div className="flex items-center justify-between">
                   <div className="text-lg font-bold">M{r.p}</div>

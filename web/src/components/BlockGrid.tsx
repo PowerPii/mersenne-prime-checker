@@ -43,14 +43,14 @@ export default function BlockGrid() {
         return (
           <div
             key={b.id}
-            className="rounded-xl bg-white border border-slate-200 p-4"
+            className={`rounded-xl ${pct === 100 ? "bg-emerald-200 dark:bg-emerald-800" : "bg-white dark:bg-black"} border border-slate-200 dark:border-slate-800 p-4`}
           >
             <div className="flex items-center justify-between">
-              <div className="text-lg font-medium">{b.label}</div>
+              <div className="text-lg font-bold">{b.label}</div>
               <button
                 onClick={() => start(b.id)}
                 title="Start block"
-                className="p-1.5 rounded-md border border-slate-200 hover:bg-slate-50"
+                className="p-1.5 rounded-md border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-950"
               >
                 {/* simple play icon */}
                 <svg
@@ -64,12 +64,12 @@ export default function BlockGrid() {
               </button>
             </div>
             <div className="text-xs text-slate-600">
-              range [{b.start.toLocaleString()} …{" "}
-              {(b.end_excl - 1).toLocaleString()} )
+              Range: [{b.start.toLocaleString()},{" "}
+              {(b.end_excl - 1).toLocaleString()})
             </div>
-            <div className="mt-2 h-2 rounded bg-slate-100 overflow-hidden">
+            <div className="mt-2 h-2 rounded bg-slate-100 dark:bg-slate-900 overflow-hidden">
               <div
-                className="h-full bg-slate-900 transition-all"
+                className="h-full bg-slate-900 dark:bg-slate-100 transition-all"
                 style={{ width: `${pct}%` }}
               />
             </div>

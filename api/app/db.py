@@ -1,4 +1,6 @@
 # api/app/db.py
+from __future__ import annotations
+
 import sqlite3
 import pathlib
 import time
@@ -14,7 +16,7 @@ def connect(db_path: pathlib.Path = DB_PATH) -> sqlite3.Connection:
     with conn:
         conn.execute("PRAGMA journal_mode=WAL;")
         conn.execute("PRAGMA foreign_keys=ON;")
-        # if you like: conn.execute("PRAGMA synchronous=NORMAL;")
+        # Consider: conn.execute("PRAGMA synchronous=NORMAL;")
     _ensure_core_schema(conn)
     _ensure_blocks_schema(conn)
     return conn
@@ -36,6 +38,7 @@ def _ensure_core_schema(conn: sqlite3.Connection):
           error TEXT,
           engine_info TEXT
         );
+
         CREATE TABLE IF NOT EXISTS artifacts(
           job_id TEXT PRIMARY KEY,
           filename TEXT NOT NULL,
@@ -49,15 +52,17 @@ def _ensure_core_schema(conn: sqlite3.Connection):
         )
 
 
-def job_insert(c, id, kind, p, status="queued"):
+def job_insert(
+    c: sqlite3.Connection, id: str, kind: str, p: int, status: str = "queued"
+):
     with c:
         c.execute(
             "INSERT INTO jobs(id,kind,p,status,created_at) VALUES(?,?,?,?,?)",
-            (id, kind, p, status, int(time.time())),
+            (id, kind, int(p), status, int(time.time())),
         )
 
 
-def job_start(c, id):
+def job_start(c: sqlite3.Connection, id: str):
     with c:
         c.execute(
             "UPDATE jobs SET status='running', started_at=? WHERE id=?",
@@ -65,7 +70,7 @@ def job_start(c, id):
         )
 
 
-def job_finish_ok(c, id, engine=None):
+def job_finish_ok(c: sqlite3.Connection, id: str, engine: str | None = None):
     with c:
         c.execute(
             "UPDATE jobs SET status='done', finished_at=?, engine_info=? WHERE id=?",
@@ -73,7 +78,7 @@ def job_finish_ok(c, id, engine=None):
         )
 
 
-def job_fail(c, id, err):
+def job_fail(c: sqlite3.Connection, id: str, err: str):
     with c:
         c.execute(
             "UPDATE jobs SET status='error', finished_at=?, error=? WHERE id=?",
@@ -81,24 +86,32 @@ def job_fail(c, id, err):
         )
 
 
-def job_get(c, id):
+def job_get(c: sqlite3.Connection, id: str):
     return c.execute("SELECT * FROM jobs WHERE id=?", (id,)).fetchone()
 
 
-def artifact_insert(c, job_id, filename, path, digits, size_bytes, sha256):
+def artifact_insert(
+    c: sqlite3.Connection,
+    job_id: str,
+    filename: str,
+    path: str,
+    digits: int,
+    size_bytes: int,
+    sha256: str,
+):
     with c:
         c.execute(
             "INSERT INTO artifacts(job_id,filename,path,digits,size_bytes,sha256) VALUES(?,?,?,?,?,?)",
-            (job_id, filename, path, digits, size_bytes, sha256),
+            (job_id, filename, path, int(digits), int(size_bytes), sha256),
         )
 
 
-def artifact_get_by_job(c, job_id):
+def artifact_get_by_job(c: sqlite3.Connection, job_id: str):
     return c.execute("SELECT * FROM artifacts WHERE job_id=?", (job_id,)).fetchone()
 
 
 # ---------- blocks/exponents ----------
-def _ensure_blocks_schema(conn):
+def _ensure_blocks_schema(conn: sqlite3.Connection):
     with conn:
         conn.executescript(
             """
@@ -136,7 +149,7 @@ def _ensure_blocks_schema(conn):
            SET block_id = CAST(p / 1000000 AS INTEGER)
          WHERE block_id IS NULL;
 
-        -- Ensure a minimal blocks row exists for every referenced block_id
+        -- Ensure minimal blocks rows for any referenced block_id
         INSERT INTO blocks(id, start_p, end_p_excl, candidate_count, status, created_at)
         SELECT bid,
                bid*1000000,
@@ -156,7 +169,13 @@ def _ensure_blocks_schema(conn):
         )
 
 
-def block_upsert(conn, block_id: int, start: int, end_excl: int, candidate_count: int):
+def block_upsert(
+    conn: sqlite3.Connection,
+    block_id: int,
+    start: int,
+    end_excl: int,
+    candidate_count: int,
+):
     with conn:
         conn.execute(
             """
@@ -177,17 +196,17 @@ def block_upsert(conn, block_id: int, start: int, end_excl: int, candidate_count
         )
 
 
-def block_get(conn, block_id: int):
+def block_get(conn: sqlite3.Connection, block_id: int):
     return conn.execute("SELECT * FROM blocks WHERE id=?", (int(block_id),)).fetchone()
 
 
-def block_list(conn, limit: int = 12):
+def block_list(conn: sqlite3.Connection, limit: int = 12):
     return conn.execute(
         "SELECT * FROM blocks ORDER BY id LIMIT ?", (int(limit),)
     ).fetchall()
 
 
-def block_counts_bump(conn, block_id: int, tested_inc: int):
+def block_counts_bump(conn: sqlite3.Connection, block_id: int, tested_inc: int):
     with conn:
         conn.execute(
             "UPDATE blocks SET tested_count=tested_count+? WHERE id=?",
@@ -195,7 +214,7 @@ def block_counts_bump(conn, block_id: int, tested_inc: int):
         )
 
 
-def block_verified_bump(conn, block_id: int, inc: int = 1):
+def block_verified_bump(conn: sqlite3.Connection, block_id: int, inc: int = 1):
     with conn:
         conn.execute(
             "UPDATE blocks SET verified_count=verified_count+? WHERE id=?",
@@ -203,7 +222,7 @@ def block_verified_bump(conn, block_id: int, inc: int = 1):
         )
 
 
-def exponent_seed(conn, block_id: int, primes: list[int]):
+def exponent_seed(conn: sqlite3.Connection, block_id: int, primes: list[int]):
     with conn:
         conn.executemany(
             "INSERT OR IGNORE INTO exponents(p,block_id) VALUES(?,?)",
@@ -211,20 +230,21 @@ def exponent_seed(conn, block_id: int, primes: list[int]):
         )
 
 
-def exponents_by_block(conn, block_id: int):
+def exponents_by_block(conn: sqlite3.Connection, block_id: int):
     return conn.execute(
         "SELECT * FROM exponents WHERE block_id=? ORDER BY p", (int(block_id),)
     ).fetchall()
 
 
-def exponents_unfinished(conn, block_id: int):
+def exponents_unfinished(conn: sqlite3.Connection, block_id: int):
+    # Skip done and currently running; scheduler will only pick queued/error/paused
     return conn.execute(
         "SELECT p FROM exponents WHERE block_id=? AND status!='done' AND status!='running' ORDER BY p",
         (int(block_id),),
     ).fetchall()
 
 
-def exponent_start(conn, p: int):
+def exponent_start(conn: sqlite3.Connection, p: int):
     with conn:
         conn.execute(
             "UPDATE exponents SET status='running', job_started_at=? WHERE p=?",
@@ -233,7 +253,11 @@ def exponent_start(conn, p: int):
 
 
 def exponent_finish_ok(
-    conn, p: int, is_prime: int, ns_elapsed: int, engine_info: str | None
+    conn: sqlite3.Connection,
+    p: int,
+    is_prime: int,
+    ns_elapsed: int,
+    engine_info: str | None,
 ):
     with conn:
         conn.execute(
@@ -245,7 +269,6 @@ def exponent_finish_ok(
             (int(is_prime), int(ns_elapsed), engine_info, int(time.time()), int(p)),
         )
         if is_prime:
-            # bump verified_count on the owning block
             conn.execute(
                 """
                 UPDATE blocks SET verified_count = verified_count + 1
@@ -255,7 +278,7 @@ def exponent_finish_ok(
             )
 
 
-def exponent_fail(conn, p: int, err: str):
+def exponent_fail(conn: sqlite3.Connection, p: int, err: str):
     with conn:
         conn.execute(
             "UPDATE exponents SET status='error', error=?, job_finished_at=? WHERE p=?",
@@ -263,7 +286,17 @@ def exponent_fail(conn, p: int, err: str):
         )
 
 
-def primes_recent(conn, limit: int = 20):
+def exponent_reset(conn, p: int):
+    """Reset a running/cancelled exponent to 'queued' so it can be resumed later."""
+    with conn:
+        conn.execute(
+            "UPDATE exponents SET status='queued', job_started_at=NULL, job_finished_at=NULL, error=NULL WHERE p=?",
+            (int(p),),
+        )
+
+
+def primes_recent(conn: sqlite3.Connection, limit: int = 20):
+    # Sorted with known finished times first, then nulls, newest first
     return conn.execute(
         """
         SELECT p, block_id, job_finished_at AS finished_at, engine_info, ns_elapsed

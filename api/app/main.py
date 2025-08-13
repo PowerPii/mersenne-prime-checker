@@ -2,7 +2,7 @@
 from fastapi import FastAPI
 from concurrent.futures import ThreadPoolExecutor
 from .routes import jobs, digits, blocks, primes
-from .ws import router as ws_router
+from . import ws
 from . import db
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -20,7 +20,7 @@ def create_app() -> FastAPI:
     app.include_router(digits.router, prefix="/digits", tags=["digits"])
     app.include_router(blocks.router, prefix="/blocks", tags=["blocks"])
     app.include_router(primes.router, prefix="/primes", tags=["primes"])
-    app.include_router(ws_router, prefix="/ws", tags=["ws"])
+    app.include_router(ws.router)
 
     @app.on_event("startup")
     def _open_db():
@@ -41,7 +41,10 @@ app = create_app()
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "http://127.0.0.1:3000"],
+    allow_origins=[
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

@@ -1,7 +1,6 @@
-import { API_BASE } from "./api";
 export function wsUrl(path: string) {
-  const u = new URL(API_BASE);
+  const api = process.env.NEXT_PUBLIC_API_BASE || "http://127.0.0.1:8000";
+  const u = new URL(path, api);
   u.protocol = u.protocol.replace("http", "ws");
-  u.pathname = path.startsWith("/") ? path : `/${path}`;
   return u.toString();
 }
